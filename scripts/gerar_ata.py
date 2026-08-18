@@ -119,7 +119,7 @@ def extract_pendencies(entries: list[dict[str, str]]) -> list[str]:
         text = entry["text"]
         if contains_any(text, PENDENCY_TOKENS):
             pendencies.append(f"- {text}")
-    return pendencies or ["- Nenhuma pendência explicitamente registrada na transcrição."]
+    return pendencies
 
 
 def extract_risks(entries: list[dict[str, str]]) -> list[str]:
@@ -128,7 +128,7 @@ def extract_risks(entries: list[dict[str, str]]) -> list[str]:
         text = entry["text"]
         if contains_any(text, RISK_TOKENS):
             risks.append(f"- {text}")
-    return risks or ["- Nenhum risco explicitamente descrito na transcrição."]
+    return risks
 
 
 def extract_confirmations(entries: list[dict[str, str]]) -> list[str]:
@@ -137,7 +137,7 @@ def extract_confirmations(entries: list[dict[str, str]]) -> list[str]:
         text = entry["text"]
         if contains_any(text, CONFIRMATION_TOKENS):
             confirmations.append(f"- {text}")
-    return confirmations or ["- Nenhuma confirmação explicitamente registrada na transcrição."]
+    return confirmations
 
 
 def render_markdown_table(rows: list[dict[str, str]], columns: list[str]) -> str:
@@ -173,7 +173,9 @@ def render_tasks(tasks: list[dict[str, str]]) -> str:
     return render_markdown_table(tasks, ["ID", "Tarefa", "Responsável", "Prazo", "Confiança", "Evidência"])
 
 
-def render_custom_list(items: list[str]) -> str:
+def render_custom_list(items: list[str], fallback: str | None = None) -> str:
+    if not items:
+        return fallback or "- Nenhuma informação explicitamente registrada na transcrição."
     return "\n".join(items)
 
 
@@ -185,20 +187,24 @@ def stringify_value(value: Any) -> str:
     return str(value)
 
 
-def build_ata_content(validation: dict[str, Any]) -> str:
+def extract_meeting_facts(body: str) -> dict[str, Any]:
+    entries = iterate_speech_lines(body)
+    return {
+        "summary": build_executive_summary(entries),
+        "topics": build_topics(entries),
+        "decisions": extract_decisions(entries),
+        "tasks": extract_tasks(entries),
+        "pendencies": extract_pendencies(entries),
+        "risks": extract_risks(entries),
+        "confirmations": extract_confirmations(entries),
+    }
+
+
+def build_ata_content(validation: dict[str, Any], facts: dict[str, Any] | None = None) -> str:
     metadata = validation["metadata"]
     client_data = validation["cliente"]
     project_data = validation["projeto"]
-    body = validation["body"]
-    entries = iterate_speech_lines(body)
-
-    executive_summary = build_executive_summary(entries)
-    topics = build_topics(entries)
-    decisions = extract_decisions(entries)
-    tasks = extract_tasks(entries)
-    pendencies = extract_pendencies(entries)
-    risks = extract_risks(entries)
-    confirmations = extract_confirmations(entries)
+    facts = facts or extract_meeting_facts(validation["body"])
 
     template = Path(__file__).resolve().parent.parent / "templates" / "ata-padrao.md"
     content = template.read_text(encoding="utf-8")
@@ -211,12 +217,12 @@ def build_ata_content(validation: dict[str, Any]) -> str:
         "{{ idioma }}": stringify_value(metadata.get("idioma", "não informado")),
         "{{ participantes }}": ", ".join(metadata.get("participantes", [])) if isinstance(metadata.get("participantes"), list) else stringify_value(metadata.get("participantes", "não informado")),
         "{{ objetivo }}": stringify_value(metadata.get("titulo", "Reunião")),
-        "{{ resumo_executivo }}": executive_summary,
-        "{{ topicos_discutidos }}": render_custom_list(topics),
-        "{{ decisoes }}": render_decisions(decisions),
-        "{{ tarefas }}": render_tasks(tasks),
-        "{{ riscos }}": render_custom_list(risks),
-        "{{ confirmacoes }}": render_custom_list(confirmations),
+        "{{ resumo_executivo }}": facts["summary"],
+        "{{ topicos_discutidos }}": render_custom_list(facts["topics"]),
+        "{{ decisoes }}": render_decisions(facts["decisions"]),
+        "{{ tarefas }}": render_tasks(facts["tasks"]),
+        "{{ riscos }}": render_custom_list(facts["risks"], "- Nenhum risco explicitamente descrito na transcrição."),
+        "{{ confirmacoes }}": render_custom_list(facts["confirmations"], "- Nenhuma confirmação explicitamente registrada na transcrição."),
         "{{ observacoes }}": "Sem observações adicionais explicitamente mencionadas na transcrição.",
     }
     for key, value in replacements.items():
@@ -224,13 +230,21 @@ def build_ata_content(validation: dict[str, Any]) -> str:
     return content
 
 
-def build_manifest(validation: dict[str, Any], ata_path: Path, manifest_path: Path, repo_root: str | Path) -> dict[str, Any]:
+def build_manifest(
+    validation: dict[str, Any],
+    ata_path: Path,
+    manifest_path: Path,
+    repo_root: str | Path,
+    decisions: list[dict[str, str]] | None = None,
+    tasks: list[dict[str, str]] | None = None,
+    risks: list[str] | None = None,
+    confirmations: list[str] | None = None,
+) -> dict[str, Any]:
     metadata = validation["metadata"]
     client_data = validation["cliente"]
     project_data = validation["projeto"]
-    body = validation["body"]
-    entries = iterate_speech_lines(body)
     root = Path(repo_root).resolve()
+    issue_path = manifest_path.parent / f"{manifest_path.stem}.issues.yml"
     manifest = {
         "versao_schema": "1.0",
         "cliente": {
@@ -250,7 +264,7 @@ def build_manifest(validation: dict[str, Any], ata_path: Path, manifest_path: Pa
         "arquivos": {
             "transcricao": validation["path"],
             "ata": str(ata_path.relative_to(root)),
-            "issues": str(manifest_path.with_suffix(".issues.yml").relative_to(root)),
+            "issues": str(issue_path.relative_to(root)),
         },
         "status": "aguardando-validacao",
         "agente": {
@@ -258,10 +272,10 @@ def build_manifest(validation: dict[str, Any], ata_path: Path, manifest_path: Pa
             "versao": "0.1.0",
         },
         "resultado": {
-            "decisoes": len(extract_decisions(entries)),
-            "tarefas": len(extract_tasks(entries)),
-            "riscos": len(extract_risks(entries)),
-            "esclarecimentos": len(extract_confirmations(entries)),
+            "decisoes": len(decisions or []),
+            "tarefas": len(tasks or []),
+            "riscos": len(risks or []),
+            "esclarecimentos": len(confirmations or []),
             "confianca_geral": "alta",
         },
         "pull_request": {
@@ -289,10 +303,20 @@ def generate_ata(transcript_path: str | Path, repo_root: str | Path) -> dict[str
     ata_path = ata_dir / f"{meeting_id}.md"
     manifesto_path = processing_dir / f"{meeting_id}.yml"
 
-    ata_content = build_ata_content(validation)
+    facts = extract_meeting_facts(validation["body"])
+    ata_content = build_ata_content(validation, facts)
     ata_path.write_text(ata_content + "\n", encoding="utf-8")
 
-    manifest = build_manifest(validation, ata_path, manifesto_path, repo)
+    manifest = build_manifest(
+        validation,
+        ata_path,
+        manifesto_path,
+        repo,
+        facts["decisions"],
+        facts["tasks"],
+        facts["risks"],
+        facts["confirmations"],
+    )
     manifesto_path.write_text(yaml.safe_dump(manifest, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
     return {
