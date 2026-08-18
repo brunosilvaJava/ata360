@@ -163,14 +163,16 @@ def render_markdown_table(rows: list[dict[str, str]], columns: list[str]) -> str
 
 def render_decisions(decisions: list[dict[str, str]]) -> str:
     if not decisions:
-        return "Nenhuma decisão explicitamente registrada na transcrição."
-    return render_markdown_table(decisions, ["ID", "Decisão", "Confiança", "Evidência"])
+        return "| - | Nenhuma decisão explicitamente registrada na transcrição. | - | - |"
+    table = render_markdown_table(decisions, ["ID", "Decisão", "Confiança", "Evidência"])
+    return "\n".join(table.splitlines()[2:])
 
 
 def render_tasks(tasks: list[dict[str, str]]) -> str:
     if not tasks:
-        return "Nenhuma tarefa explicitamente registrada na transcrição."
-    return render_markdown_table(tasks, ["ID", "Tarefa", "Responsável", "Prazo", "Confiança", "Evidência"])
+        return "| - | Nenhuma tarefa explicitamente registrada na transcrição. | - | - | - | - |"
+    table = render_markdown_table(tasks, ["ID", "Tarefa", "Responsável", "Prazo", "Confiança", "Evidência"])
+    return "\n".join(table.splitlines()[2:])
 
 
 def render_custom_list(items: list[str], fallback: str | None = None) -> str:
