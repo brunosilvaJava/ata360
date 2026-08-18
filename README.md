@@ -32,8 +32,6 @@ python -m pip install -r requirements.txt
 python -m pytest -q
 ```
 
-Neste repositório, as dependências de teste são instaladas via `pyproject.toml` e podem ser instaladas com:
+Opcionalmente, você pode instalar as dependências diretamente (equivalente a `requirements.txt`):
 
-```bash
-python -m pip install PyYAML pytest
-```
+    python -m pip install PyYAML pytest
