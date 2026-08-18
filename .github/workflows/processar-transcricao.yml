@@ -52,9 +52,14 @@ jobs:
 
       - name: Simular geração da ata
         run: |
-          mkdir -p clientes/exemplo/projetos/projeto-exemplo/atas clientes/exemplo/projetos/projeto-exemplo/processamento
-          cp templates/ata-padrao.md clientes/exemplo/projetos/projeto-exemplo/atas/2026-08-18-status.md
-          cp templates/manifesto.yml clientes/exemplo/projetos/projeto-exemplo/processamento/2026-08-18-status.yml
+          CLIENTE="$(echo "$ARQUIVO" | cut -d/ -f2)"
+          PROJETO="$(echo "$ARQUIVO" | cut -d/ -f4)"
+          REUNIAO="$(basename "$ARQUIVO")"
+          REUNIAO="${REUNIAO%.*}"
+          BASE="clientes/$CLIENTE/projetos/$PROJETO"
+          mkdir -p "$BASE/atas" "$BASE/processamento"
+          cp templates/ata-padrao.md "$BASE/atas/$REUNIAO.md"
+          cp templates/manifesto.yml "$BASE/processamento/$REUNIAO.yml"
 
       - name: Commit e push
         run: |
