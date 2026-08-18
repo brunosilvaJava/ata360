@@ -39,9 +39,16 @@ jobs:
       - name: Validar artefatos
         run: python -m pytest -q
 
+      - name: Definir variáveis do processamento
+        run: |
+          ARQUIVO="${{ github.event.inputs.arquivo || github.event.head_commit.modified[0] || github.event.head_commit.added[0] || 'clientes/exemplo/projetos/projeto-exemplo/transcricoes/2026-08-18-status.md' }}"
+          BRANCH="automacao/ata-$(echo "$ARQUIVO" | sed 's#^clientes/##; s#/#-#g; s#\.md$##; s#\.txt$##; s#[^a-zA-Z0-9._/-]#-#g' | tr '[:upper:]' '[:lower:]')"
+          echo "ARQUIVO=$ARQUIVO" >> "$GITHUB_ENV"
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
+
       - name: Criar branch
         run: |
-          git checkout -b "automacao/ata-exemplo-projeto-exemplo-2026-08-18-status"
+          git checkout -b "$BRANCH"
 
       - name: Simular geração da ata
         run: |
@@ -55,8 +62,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git commit -m "Gerar ata inicial" || echo "No changes to commit"
+          git push --set-upstream origin "$BRANCH"
 
       - name: Criar PR
         if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Pull request de revisão da ata seria criada aqui."
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "ata(exemplo/projeto-exemplo): reunião de status - 2026-08-18" \
+            --body "## Resumo\n- Cliente: exemplo\n- Projeto: projeto-exemplo\n- Reunião: 2026-08-18-status\n- Arquivo da transcrição: $ARQUIVO\n\n## Checklist\n- [ ] Ata revisada\n- [ ] Metadados consistentes\n- [ ] Merge torna a ata oficial" || echo "PR já existente ou criação não executada"

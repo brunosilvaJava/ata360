@@ -1,22 +1,22 @@
 versao_schema: "1.0"
 
 cliente:
-  id: {{ cliente_id }}
-  nome: {{ cliente_nome }}
+  id: "{{ cliente_id }}"
+  nome: "{{ cliente_nome }}"
 
 projeto:
-  id: {{ projeto_id }}
-  nome: {{ projeto_nome }}
+  id: "{{ projeto_id }}"
+  nome: "{{ projeto_nome }}"
 
 reuniao:
-  id: {{ reuniao_id }}
-  titulo: {{ reuniao_titulo }}
-  data: {{ reuniao_data }}
+  id: "{{ reuniao_id }}"
+  titulo: "{{ reuniao_titulo }}"
+  data: "{{ reuniao_data }}"
 
 arquivos:
-  transcricao: {{ transcricao }}
-  ata: {{ ata }}
-  issues: {{ issues }}
+  transcricao: "{{ transcricao }}"
+  ata: "{{ ata }}"
+  issues: "{{ issues }}"
 
 status: aguardando-validacao
 
