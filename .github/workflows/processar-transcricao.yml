@@ -69,8 +69,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          CLIENTE="$(echo "$ARQUIVO" | cut -d/ -f2)"
+          PROJETO="$(echo "$ARQUIVO" | cut -d/ -f4)"
+          REUNIAO="$(basename "$ARQUIVO")"
+          REUNIAO="${REUNIAO%.*}"
           gh pr create \
             --base main \
             --head "$BRANCH" \
-            --title "ata(exemplo/projeto-exemplo): reunião de status - 2026-08-18" \
-            --body "## Resumo\n- Cliente: exemplo\n- Projeto: projeto-exemplo\n- Reunião: 2026-08-18-status\n- Arquivo da transcrição: $ARQUIVO\n\n## Checklist\n- [ ] Ata revisada\n- [ ] Metadados consistentes\n- [ ] Merge torna a ata oficial" || echo "PR já existente ou criação não executada"
+            --title "ata($CLIENTE/$PROJETO): $REUNIAO" \
+            --body "## Resumo\n- Cliente: $CLIENTE\n- Projeto: $PROJETO\n- Reunião: $REUNIAO\n- Arquivo da transcrição: $ARQUIVO\n\n## Checklist\n- [ ] Ata revisada\n- [ ] Metadados consistentes\n- [ ] Merge torna a ata oficial" || echo "PR já existente ou criação não executada"
