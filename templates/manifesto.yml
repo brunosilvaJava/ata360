@@ -1,0 +1,39 @@
+versao_schema: "1.0"
+
+cliente:
+  id: "{{ cliente_id }}"
+  nome: "{{ cliente_nome }}"
+
+projeto:
+  id: "{{ projeto_id }}"
+  nome: "{{ projeto_nome }}"
+
+reuniao:
+  id: "{{ reuniao_id }}"
+  titulo: "{{ reuniao_titulo }}"
+  data: "{{ reuniao_data }}"
+
+arquivos:
+  transcricao: "{{ transcricao }}"
+  ata: "{{ ata }}"
+  issues: "{{ issues }}"
+
+status: aguardando-validacao
+
+agente:
+  nome: secretario-executivo
+  versao: "0.1.0"
+
+resultado:
+  decisoes: 0
+  tarefas: 0
+  riscos: 0
+  esclarecimentos: 0
+  confianca_geral: alta
+
+pull_request:
+  numero: null
+  status: aguardando-validacao
+
+issues:
+  criadas: []

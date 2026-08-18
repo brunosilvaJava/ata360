@@ -1,0 +1,10 @@
+id: projeto-exemplo
+cliente_id: exemplo
+nome: Projeto Exemplo
+codigo: PE-01
+status: ativo
+responsavel_interno: Bruno Silva
+estilo_ata: executivo-tecnico
+labels_padrao:
+  - cliente:exemplo
+  - projeto:projeto-exemplo

@@ -1,0 +1,85 @@
+name: Processar transcrição
+
+on:
+  push:
+    paths:
+      - 'clientes/**/transcricoes/**/*.md'
+      - 'clientes/**/transcricoes/**/*.txt'
+  workflow_dispatch:
+    inputs:
+      arquivo:
+        description: Caminho da transcrição a processar
+        required: true
+        type: string
+
+jobs:
+  processar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: pip install PyYAML pytest
+
+      - name: Validar transcrição
+        run: |
+          python -m scripts.validar_estrutura "${{ github.event.inputs.arquivo || 'clientes/exemplo/projetos/projeto-exemplo/transcricoes/2026-08-18-status.md' }}"
+
+      - name: Validar artefatos
+        run: python -m pytest -q
+
+      - name: Definir variáveis do processamento
+        run: |
+          ARQUIVO="${{ github.event.inputs.arquivo || github.event.head_commit.modified[0] || github.event.head_commit.added[0] || 'clientes/exemplo/projetos/projeto-exemplo/transcricoes/2026-08-18-status.md' }}"
+          BRANCH="automacao/ata-$(echo "$ARQUIVO" | sed 's#^clientes/##; s#/#-#g; s#\.md$##; s#\.txt$##; s#[^a-zA-Z0-9._/-]#-#g' | tr '[:upper:]' '[:lower:]')"
+          echo "ARQUIVO=$ARQUIVO" >> "$GITHUB_ENV"
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
+
+      - name: Criar branch
+        run: |
+          git checkout -b "$BRANCH"
+
+      - name: Simular geração da ata
+        run: |
+          CLIENTE="$(echo "$ARQUIVO" | cut -d/ -f2)"
+          PROJETO="$(echo "$ARQUIVO" | cut -d/ -f4)"
+          REUNIAO="$(basename "$ARQUIVO")"
+          REUNIAO="${REUNIAO%.*}"
+          BASE="clientes/$CLIENTE/projetos/$PROJETO"
+          mkdir -p "$BASE/atas" "$BASE/processamento"
+          cp templates/ata-padrao.md "$BASE/atas/$REUNIAO.md"
+          cp templates/manifesto.yml "$BASE/processamento/$REUNIAO.yml"
+
+      - name: Commit e push
+        run: |
+          git add .
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "Gerar ata inicial" || echo "No changes to commit"
+          git push --set-upstream origin "$BRANCH"
+
+      - name: Criar PR
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CLIENTE="$(echo "$ARQUIVO" | cut -d/ -f2)"
+          PROJETO="$(echo "$ARQUIVO" | cut -d/ -f4)"
+          REUNIAO="$(basename "$ARQUIVO")"
+          REUNIAO="${REUNIAO%.*}"
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "ata($CLIENTE/$PROJETO): $REUNIAO" \
+            --body "## Resumo\n- Cliente: $CLIENTE\n- Projeto: $PROJETO\n- Reunião: $REUNIAO\n- Arquivo da transcrição: $ARQUIVO\n\n## Checklist\n- [ ] Ata revisada\n- [ ] Metadados consistentes\n- [ ] Merge torna a ata oficial" || echo "PR já existente ou criação não executada"

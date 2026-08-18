@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyYAML pytest
+
+      - name: Validate Python syntax
+        run: python -m compileall scripts
+
+      - name: Validate YAML
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+          for path in sorted(Path('.').rglob('*.yml')):
+              with path.open('r', encoding='utf-8') as handle:
+                  yaml.safe_load(handle)
+          print('YAML validation passed')
+          PY
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Check required files
+        run: |
+          test -f .github/agents/secretario-executivo.agent.md
+          test -f .github/workflows/processar-transcricao.yml
+          test -f .github/workflows/criar-issues-apos-merge.yml
+          test -f .github/workflows/ci.yml
+
+      - name: Check fixtures
+        run: test -f clientes/exemplo/projetos/projeto-exemplo/transcricoes/2026-08-18-status.md
