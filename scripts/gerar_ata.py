@@ -319,6 +319,13 @@ def generate_ata(transcript_path: str | Path, repo_root: str | Path) -> dict[str
     )
     manifesto_path.write_text(yaml.safe_dump(manifest, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
+    issues_path = processing_dir / f"{meeting_id}.issues.yml"
+    if not issues_path.exists():
+        issues_path.write_text(
+            yaml.safe_dump({"issues": []}, allow_unicode=True, sort_keys=False),
+            encoding="utf-8",
+        )
+
     return {
         "transcript": validation["path"],
         "ata": str(ata_path.relative_to(repo)),
