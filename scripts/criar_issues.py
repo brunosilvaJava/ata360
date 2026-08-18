@@ -25,9 +25,10 @@ def reconcile_issues(
     lookup = existing_issue_lookup or (lambda _identifier: False)
     created: list[dict] = []
     for issue in issues:
+        if not isinstance(issue, dict):
+            raise ValueError(f"Issue inválida em {issues_file}: {issue!r}")
         payload = dict(issue)
         stable_id = stable_issue_id(client_id, project_id, reunion_id, str(payload.get("id", "unknown")))
-        payload["stable_id"] = stable_id
         if lookup(stable_id):
             continue
         created.append(payload)
