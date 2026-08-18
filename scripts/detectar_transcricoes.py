@@ -3,7 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
-from scripts.utils import normalize_repo_path
+try:
+    from scripts.utils import normalize_repo_path
+except ModuleNotFoundError:
+    from utils import normalize_repo_path
 
 SUPPORTED_EXTENSIONS = {".md", ".txt"}
 

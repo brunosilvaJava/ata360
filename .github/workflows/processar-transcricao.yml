@@ -34,7 +34,7 @@ jobs:
 
       - name: Validar transcrição
         run: |
-          python scripts/validar_estrutura.py "${{ github.event.inputs.arquivo || 'clientes/exemplo/projetos/projeto-exemplo/transcricoes/2026-08-18-status.md' }}"
+          python -m scripts.validar_estrutura "${{ github.event.inputs.arquivo || 'clientes/exemplo/projetos/projeto-exemplo/transcricoes/2026-08-18-status.md' }}"
 
       - name: Validar artefatos
         run: python -m pytest -q
