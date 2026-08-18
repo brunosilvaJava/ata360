@@ -1,0 +1,19 @@
+issues:
+  - id: action-001
+    tipo: action-item
+    titulo: "[EXM][PE-01] Enviar versão revisada"
+    labels:
+      - generated-by-agent
+      - action-item
+      - needs-validation
+      - cliente:exemplo
+      - projeto:exemplo
+    descricao: Enviar a versão revisada do documento.
+    responsavel: Maria Souza
+    prazo: sexta-feira
+    confianca: alta
+    origem:
+      transcricao: clientes/exemplo/projetos/projeto-exemplo/transcricoes/2026-08-18-status.md
+      referencia: "[00:02:15]"
+      ata: clientes/exemplo/projetos/projeto-exemplo/atas/2026-08-18-status.md
+    status: proposta

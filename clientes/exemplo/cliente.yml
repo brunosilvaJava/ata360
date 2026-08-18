@@ -1,0 +1,7 @@
+id: exemplo
+nome: Exemplo Ltda.
+sigla: EXM
+idioma_padrao: pt-BR
+fuso_horario: America/Sao_Paulo
+estilo_ata: executivo-formal
+ativo: true

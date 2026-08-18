@@ -1,0 +1,62 @@
+name: Processar transcrição
+
+on:
+  push:
+    paths:
+      - 'clientes/**/transcricoes/**/*.md'
+      - 'clientes/**/transcricoes/**/*.txt'
+  workflow_dispatch:
+    inputs:
+      arquivo:
+        description: Caminho da transcrição a processar
+        required: true
+        type: string
+
+jobs:
+  processar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: pip install PyYAML pytest
+
+      - name: Validar transcrição
+        run: |
+          python scripts/validar_estrutura.py "${{ github.event.inputs.arquivo || 'clientes/exemplo/projetos/projeto-exemplo/transcricoes/2026-08-18-status.md' }}"
+
+      - name: Validar artefatos
+        run: python -m pytest -q
+
+      - name: Criar branch
+        run: |
+          git checkout -b "automacao/ata-exemplo-projeto-exemplo-2026-08-18-status"
+
+      - name: Simular geração da ata
+        run: |
+          mkdir -p clientes/exemplo/projetos/projeto-exemplo/atas clientes/exemplo/projetos/projeto-exemplo/processamento
+          cp templates/ata-padrao.md clientes/exemplo/projetos/projeto-exemplo/atas/2026-08-18-status.md
+          cp templates/manifesto.yml clientes/exemplo/projetos/projeto-exemplo/processamento/2026-08-18-status.yml
+
+      - name: Commit e push
+        run: |
+          git add .
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "Gerar ata inicial" || echo "No changes to commit"
+
+      - name: Criar PR
+        if: success()
+        run: |
+          echo "Pull request de revisão da ata seria criada aqui."
