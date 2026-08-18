@@ -36,8 +36,14 @@ def reconcile_issues(
 
 def update_manifesto_status(manifesto_path: str | Path, created_issues: list[dict]) -> dict:
     manifest = read_yaml(manifesto_path)
-    manifest.setdefault("issues", {})
-    manifest["issues"]["criadas"] = [item.get("stable_id") for item in created_issues]
+    issues_section = manifest.get("issues")
+    if issues_section is None:
+        issues_section = {}
+        manifest["issues"] = issues_section
+    if not isinstance(issues_section, dict):
+        raise ValueError(f"Campo 'issues' inválido em {manifesto_path}")
+
+    issues_section["criadas"] = [item["stable_id"] for item in created_issues]
     if created_issues:
         manifest["status"] = "issues-criadas"
     return manifest
