@@ -44,6 +44,10 @@ def test_generate_ata_creates_markdown_and_manifest(tmp_path):
     assert manifest['status'] == 'aguardando-validacao'
     assert manifest['resultado']['tarefas'] >= 1
 
+    issues_path = repo_root / manifest['arquivos']['issues']
+    assert issues_path.exists()
+    issues_payload = yaml.safe_load(issues_path.read_text(encoding='utf-8'))
+    assert isinstance(issues_payload.get('issues'), list)
 
 def test_generate_ata_rejects_traversal(tmp_path):
     repo_root, _ = make_valid_repo(tmp_path)
