@@ -4,7 +4,10 @@ import json
 import sys
 from pathlib import Path
 
-from scripts.utils import ensure_required_fields, normalize_repo_path, read_front_matter, read_yaml
+try:
+    from scripts.utils import ensure_required_fields, normalize_repo_path, read_front_matter, read_yaml
+except ModuleNotFoundError:
+    from utils import ensure_required_fields, normalize_repo_path, read_front_matter, read_yaml
 
 CLIENT_REQUIRED_FIELDS = ["id", "nome", "sigla", "idioma_padrao", "fuso_horario", "estilo_ata", "ativo"]
 PROJECT_REQUIRED_FIELDS = ["id", "cliente_id", "nome", "codigo", "status", "responsavel_interno", "estilo_ata", "labels_padrao"]

@@ -1,3 +1,5 @@
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -33,3 +35,15 @@ def test_validate_transcript_rejects_empty_body(tmp_path):
 
     with pytest.raises(ValueError):
         validate_transcript('clientes/acme/projetos/projeto-alpha/transcricoes/reuniao-vazia.md', repo_root)
+
+
+def test_validate_transcript_cli_runs_directly():
+    result = subprocess.run(
+        [sys.executable, 'scripts/validar_estrutura.py', 'clientes/exemplo/projetos/projeto-exemplo/transcricoes/2026-08-18-status.md'],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert 'status' in result.stdout.lower()
